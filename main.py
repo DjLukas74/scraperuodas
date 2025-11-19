@@ -2,19 +2,27 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
 import csv
+import os
+
+COOKIE_FILE = "cookies.json"
+
 
 def fetch_page(url):
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
-        )
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/121.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 800}
-        )
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+
+        # Load cookies if available
+        if os.path.exists(COOKIE_FILE):
+            try:
+                with open(COOKIE_FILE, "r", encoding="utf-8") as f:
+                    cookies = json.load(f)
+                context.add_cookies(cookies)
+                print("[INFO] Loaded cookies.json")
+            except Exception as e:
+                print("[WARN] Failed to load cookies.json:", e)
+        else:
+            print("[INFO] No cookies.json found → scraping without cookies")
 
         page = context.new_page()
         page.goto(url, wait_until="domcontentloaded")
@@ -29,6 +37,9 @@ def extract_search_block(html):
     soup = BeautifulSoup(html, "html.parser")
     block = soup.find("div", class_="list-search-v2")
 
+    if not block:
+        return None, 0
+
     num_el_html = block.select_one(".search-mark-v2 .number")
     if num_el_html:
         num_el_txt = num_el_html.get_text(strip=True).strip("()")
@@ -41,6 +52,9 @@ def extract_search_block(html):
 
 def parse_entries(block):
     entries = []
+
+    if not block:
+        return entries
 
     rows = block.find_all("div", class_="list-row-v2")
     for row in rows:
@@ -109,6 +123,9 @@ if __name__ == "__main__":
     page_url = base_url
 
     html = fetch_page(page_url)
+    if not html:
+        print("Failed to fetch the initial page.")
+        exit(1)
     block, total_entries = extract_search_block(html)
 
     all_entries = []
