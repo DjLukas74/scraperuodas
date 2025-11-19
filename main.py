@@ -98,20 +98,20 @@ def export(entries):
     # --------------------------------------------------------
     # EXPORT: JSON
     # --------------------------------------------------------
-    with open("aruodas_listings.json", "w", encoding="utf-8") as f:
+    with open("exports/aruodas_listings.json", "w", encoding="utf-8") as f:
         json.dump(all_entries, f, ensure_ascii=False, indent=4)
-        print("Saved: aruodas_listings.json")
+        print("Saved: exports/aruodas_listings.json")
 
     # --------------------------------------------------------
     # EXPORT: CSV
     # --------------------------------------------------------
     csv_fields = ["price", "price_m2", "area_m2", "address", "url"]
     
-    with open("aruodas_listings.csv", "w", encoding="utf-8", newline="") as f:
+    with open("exports/aruodas_listings.csv", "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=csv_fields)
         writer.writeheader()
         writer.writerows(all_entries)
-        print("Saved: aruodas_listings.csv")
+        print("Saved: exports/aruodas_listings.csv")
 
 
 # --------------------------------------------------------
